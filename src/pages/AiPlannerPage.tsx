@@ -12,8 +12,11 @@ interface AiPlannerPageProps {
 }
 
 export const AiPlannerPage: React.FC<AiPlannerPageProps> = ({ onNavigateTab, onOpenCreateWizard }) => {
-  const [event, setEvent] = useState<EventDetails | null>(getActiveEvent())
-  const [plan, setPlan] = useState<AIGeneratedPlan | null>(null)
+  const [event, setEvent] = useState<EventDetails | null>(() => getActiveEvent())
+  const [plan, setPlan] = useState<AIGeneratedPlan | null>(() => {
+    const active = getActiveEvent()
+    return active ? getEventPlan(active.id) : null
+  })
   const [loading, setLoading] = useState<boolean>(false)
   const [activeSection, setActiveSection] = useState<'concept' | 'decor' | 'food' | 'entertainment' | 'venue' | 'budget' | 'timeline' | 'vendors' | 'savings'>('concept')
   const [applySuccess, setApplySuccess] = useState<boolean>(false)
@@ -29,7 +32,6 @@ export const AiPlannerPage: React.FC<AiPlannerPageProps> = ({ onNavigateTab, onO
   }
 
   useEffect(() => {
-    reloadData()
     window.addEventListener('eventora_active_event_changed', reloadData)
     window.addEventListener('eventora_data_updated', reloadData)
     return () => {

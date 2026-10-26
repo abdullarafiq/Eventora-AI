@@ -21,7 +21,6 @@ export const IdeasGeneratorPage: React.FC = () => {
   }
 
   useEffect(() => {
-    reloadData()
     window.addEventListener('eventora_active_event_changed', reloadData)
     window.addEventListener('eventora_data_updated', reloadData)
     return () => {

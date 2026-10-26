@@ -19,8 +19,11 @@ const CATEGORY_COLORS: Record<string, string> = {
 }
 
 export const BudgetDashboardPage: React.FC = () => {
-  const [event, setEvent] = useState<EventDetails | null>(getActiveEvent())
-  const [expenses, setExpenses] = useState<ExpenseItem[]>([])
+  const [event, setEvent] = useState<EventDetails | null>(() => getActiveEvent())
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
+    const active = getActiveEvent()
+    return active ? getExpenses(active.id) : []
+  })
   const [selectedCategory, setSelectedCategory] = useState<string>('all')
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [editingExpense, setEditingExpense] = useState<ExpenseItem | null>(null)
@@ -44,7 +47,6 @@ export const BudgetDashboardPage: React.FC = () => {
   }
 
   useEffect(() => {
-    reloadData()
     window.addEventListener('eventora_active_event_changed', reloadData)
     window.addEventListener('eventora_data_updated', reloadData)
     return () => {

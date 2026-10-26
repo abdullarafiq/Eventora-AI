@@ -16,8 +16,11 @@ const VENDOR_STATUSES: { id: VendorStatus; label: string; color: string }[] = [
 ]
 
 export const VendorManagementPage: React.FC = () => {
-  const [event, setEvent] = useState<EventDetails | null>(getActiveEvent())
-  const [vendors, setVendors] = useState<VendorItem[]>([])
+  const [event, setEvent] = useState<EventDetails | null>(() => getActiveEvent())
+  const [vendors, setVendors] = useState<VendorItem[]>(() => {
+    const active = getActiveEvent()
+    return active ? getVendors(active.id) : []
+  })
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [categoryFilter, setCategoryFilter] = useState<string>('all')
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
@@ -44,7 +47,6 @@ export const VendorManagementPage: React.FC = () => {
   }
 
   useEffect(() => {
-    reloadData()
     window.addEventListener('eventora_active_event_changed', reloadData)
     window.addEventListener('eventora_data_updated', reloadData)
     return () => {

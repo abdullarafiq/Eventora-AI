@@ -17,4 +17,22 @@ export default defineConfig({
       },
     },
   },
+  build: {
+    chunkSizeWarningLimit: 650,
+    rollupOptions: {
+      output: {
+        manualChunks(id: string) {
+          if (id.includes('node_modules/three')) {
+            return 'three'
+          }
+          if (id.includes('node_modules/recharts')) {
+            return 'recharts'
+          }
+          if (id.includes('node_modules/lucide-react')) {
+            return 'lucide'
+          }
+        },
+      },
+    },
+  },
 })

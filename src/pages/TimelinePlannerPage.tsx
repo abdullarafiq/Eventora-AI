@@ -8,8 +8,11 @@ import { getActiveEvent, getTasks, saveTask, deleteTask } from '../utils/storage
 import { calculateDaysRemaining, formatDateReadable, isTaskOverdue, calculateDueDate } from '../utils/dateUtils'
 
 export const TimelinePlannerPage: React.FC = () => {
-  const [event, setEvent] = useState<EventDetails | null>(getActiveEvent())
-  const [tasks, setTasks] = useState<TimelineTask[]>([])
+  const [event, setEvent] = useState<EventDetails | null>(() => getActiveEvent())
+  const [tasks, setTasks] = useState<TimelineTask[]>(() => {
+    const active = getActiveEvent()
+    return active ? getTasks(active.id) : []
+  })
   const [filter, setFilter] = useState<'all' | 'pending' | 'completed' | 'overdue' | 'high'>('all')
   const [isModalOpen, setIsModalOpen] = useState<boolean>(false)
   const [editingTask, setEditingTask] = useState<TimelineTask | null>(null)
@@ -31,7 +34,6 @@ export const TimelinePlannerPage: React.FC = () => {
   }
 
   useEffect(() => {
-    reloadData()
     window.addEventListener('eventora_active_event_changed', reloadData)
     window.addEventListener('eventora_data_updated', reloadData)
     return () => {

@@ -1,5 +1,3 @@
-import { z } from 'zod'
-
 export interface EventInput {
   id?: string
   name: string
@@ -417,7 +415,7 @@ Note: Ensure budgetAllocations percentages sum to 100, and allocatedAmount sums 
     parsed.isAiGenerated = true
     parsed.modelUsed = 'Google Gemini 1.5 Flash'
     return parsed
-  } catch (err) {
+  } catch {
     clearTimeout(timeout)
     return null
   }
@@ -456,7 +454,7 @@ async function callOpenAI(apiKey: string, event: EventInput): Promise<GeneratedP
     parsed.isAiGenerated = true
     parsed.modelUsed = 'OpenAI GPT-4o-mini'
     return parsed
-  } catch (err) {
+  } catch {
     clearTimeout(timeout)
     return null
   }

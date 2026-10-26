@@ -19,12 +19,21 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   onNavigateTab,
   onOpenCreateWizard
 }) => {
-  const [events, setEvents] = useState<EventDetails[]>(getEvents())
-  const [activeEvent, setActiveEvent] = useState<EventDetails | null>(getActiveEvent())
-  const [expenses, setExpenses] = useState<ExpenseItem[]>([])
-  const [tasks, setTasks] = useState<TimelineTask[]>([])
-  const [vendors, setVendors] = useState<VendorItem[]>([])
-  const [ideas, setIdeas] = useState<EventIdea[]>(getSavedIdeas())
+  const [events, setEvents] = useState<EventDetails[]>(() => getEvents())
+  const [activeEvent, setActiveEvent] = useState<EventDetails | null>(() => getActiveEvent())
+  const [expenses, setExpenses] = useState<ExpenseItem[]>(() => {
+    const act = getActiveEvent()
+    return act ? getExpenses(act.id) : []
+  })
+  const [tasks, setTasks] = useState<TimelineTask[]>(() => {
+    const act = getActiveEvent()
+    return act ? getTasks(act.id) : []
+  })
+  const [vendors, setVendors] = useState<VendorItem[]>(() => {
+    const act = getActiveEvent()
+    return act ? getVendors(act.id) : []
+  })
+  const [ideas, setIdeas] = useState<EventIdea[]>(() => getSavedIdeas())
 
   const reloadData = () => {
     const allEvents = getEvents()
@@ -40,7 +49,6 @@ export const DashboardPage: React.FC<DashboardPageProps> = ({
   }
 
   useEffect(() => {
-    reloadData()
     window.addEventListener('eventora_active_event_changed', reloadData)
     window.addEventListener('eventora_data_updated', reloadData)
     window.addEventListener('eventora_data_reset', reloadData)

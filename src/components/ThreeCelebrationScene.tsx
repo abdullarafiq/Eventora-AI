@@ -9,13 +9,24 @@ interface ThreeCelebrationSceneProps {
   showControls?: boolean
 }
 
+// WebGL Check Helper
+function checkWebGLSupport(): boolean {
+  if (typeof window === 'undefined') return true
+  try {
+    const canvas = document.createElement('canvas')
+    return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')))
+  } catch {
+    return false
+  }
+}
+
 export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
   className = '',
   interactive = true,
   showControls = true
 }) => {
   const mountRef = useRef<HTMLDivElement>(null)
-  const [webglSupported, setWebglSupported] = useState<boolean>(true)
+  const [webglSupported, setWebglSupported] = useState<boolean>(() => checkWebGLSupport())
   const [isReducedMotion, setIsReducedMotion] = useState<boolean>(getReducedMotion())
   const [isPaused, setIsPaused] = useState<boolean>(false)
 
@@ -29,22 +40,7 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
 
   useEffect(() => {
     const container = mountRef.current
-    if (!container) return
-
-    // WebGL Check
-    const isWebGLAvailable = () => {
-      try {
-        const canvas = document.createElement('canvas')
-        return !!(window.WebGLRenderingContext && (canvas.getContext('webgl') || canvas.getContext('experimental-webgl')))
-      } catch {
-        return false
-      }
-    }
-
-    if (!isWebGLAvailable()) {
-      setWebglSupported(false)
-      return
-    }
+    if (!container || !webglSupported) return
 
     // Three.js Scene Setup
     const scene = new THREE.Scene()
@@ -67,8 +63,8 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
       renderer.toneMapping = THREE.ACESFilmicToneMapping
       renderer.toneMappingExposure = 1.2
       container.appendChild(renderer.domElement)
-    } catch (e) {
-      setWebglSupported(false)
+    } catch {
+      window.requestAnimationFrame(() => setWebglSupported(false))
       return
     }
 
@@ -305,7 +301,7 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
       }
       renderer.dispose()
     }
-  }, [isReducedMotion, isPaused, interactive])
+  }, [isReducedMotion, isPaused, interactive, webglSupported])
 
   const toggleMotion = () => {
     const nextVal = !isReducedMotion

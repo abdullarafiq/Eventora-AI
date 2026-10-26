@@ -1,8 +1,9 @@
-import React from 'react'
+import React, { lazy, Suspense } from 'react'
 import { Sparkles, ArrowRight, ShieldCheck, PieChart, CalendarCheck, Users, Wand2, Compass, Layers, CheckCircle2, ChevronRight, Zap } from 'lucide-react'
-import { ThreeCelebrationScene } from '../components/ThreeCelebrationScene'
 import { DEMO_SCENARIOS } from '../utils/demoData'
 import { setActiveEventId } from '../utils/storage'
+
+const ThreeCelebrationScene = lazy(() => import('../components/ThreeCelebrationScene').then(m => ({ default: m.ThreeCelebrationScene })))
 
 interface LandingPageProps {
   onPlanEvent: () => void
@@ -151,7 +152,16 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto w-full max-w-md lg:max-w-none aspect-[4/3] sm:aspect-square rounded-3xl p-1 bg-gradient-to-b from-violet-500/30 via-cyan-500/20 to-transparent shadow-2xl shadow-violet-900/40">
               <div className="w-full h-full rounded-[23px] overflow-hidden bg-[#0a0c20]/90 border border-white/10 relative">
-                <ThreeCelebrationScene className="w-full h-full min-h-[380px]" interactive={true} />
+                <Suspense fallback={
+                  <div className="w-full h-full min-h-[380px] flex items-center justify-center bg-[#0a0c20]/90">
+                    <div className="flex flex-col items-center gap-2">
+                      <Sparkles className="w-8 h-8 text-violet-400 animate-pulse" />
+                      <span className="text-xs text-slate-400">Loading 3D Celebration...</span>
+                    </div>
+                  </div>
+                }>
+                  <ThreeCelebrationScene className="w-full h-full min-h-[380px]" interactive={true} />
+                </Suspense>
                 
                 {/* Floating Metric Card Overlay */}
                 <div className="absolute top-4 left-4 z-10 glass-panel px-3.5 py-2 rounded-2xl border border-white/10 shadow-lg flex items-center gap-3">

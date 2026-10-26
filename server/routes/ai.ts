@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express'
 import { GeneratePlanRequestSchema, GenerateIdeasRequestSchema, BudgetAdvisorRequestSchema } from '../schemas/apiSchemas'
-import { generateAIPlan, generateDeterministicPlan } from '../services/aiGenerator'
+import { generateAIPlan } from '../services/aiGenerator'
 import { rateLimiter } from '../middleware/rateLimiter'
 
 const router = Router()
@@ -41,7 +41,7 @@ router.post('/generate-ideas', rateLimiter, async (req: Request, res: Response) 
       return
     }
 
-    const { eventType = 'wedding', category = 'general', userPrompt = '' } = parseResult.data
+    const { eventType = 'wedding', category = 'general', userPrompt: _userPrompt = '' } = parseResult.data
 
     // Dynamic tailored idea generation
     const ideas = [
@@ -84,7 +84,7 @@ router.post('/generate-ideas', rateLimiter, async (req: Request, res: Response) 
     ]
 
     res.json(ideas)
-  } catch (error: any) {
+  } catch {
     res.status(500).json({ error: 'Failed to generate ideas' })
   }
 })
@@ -133,7 +133,7 @@ router.post('/budget-advisor', rateLimiter, async (req: Request, res: Response) 
       difference,
       recommendations
     })
-  } catch (error) {
+  } catch {
     res.status(500).json({ error: 'Budget advisor failed' })
   }
 })
