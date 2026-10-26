@@ -1,9 +1,14 @@
-import React, { lazy, Suspense } from 'react'
+import React, { useState, useEffect, lazy, Suspense } from 'react'
 import { Sparkles, ArrowRight, ShieldCheck, PieChart, CalendarCheck, Users, Wand2, Compass, Layers, CheckCircle2, ChevronRight, Zap } from 'lucide-react'
-import { DEMO_SCENARIOS } from '../utils/demoData'
 import { setActiveEventId } from '../utils/storage'
 
 const ThreeCelebrationScene = lazy(() => import('../components/ThreeCelebrationScene').then(m => ({ default: m.ThreeCelebrationScene })))
+
+const DEMO_IDS = {
+  wedding: 'demo-wedding',
+  birthday: 'demo-birthday',
+  community: 'demo-community'
+} as const
 
 interface LandingPageProps {
   onPlanEvent: () => void
@@ -16,12 +21,35 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onExploreDemo,
   onNavigateTab
 }) => {
-  const handleLoadScenario = (scenarioKey: 'wedding' | 'birthday' | 'community') => {
-    const sc = DEMO_SCENARIOS[scenarioKey]
-    if (sc) {
-      setActiveEventId(sc.id)
-      onExploreDemo()
+  const [shouldMount3D, setShouldMount3D] = useState(false)
+
+  // Defer heavy Three.js initialization until main-thread is idle to optimize FCP, LCP & TBT
+  useEffect(() => {
+    let isCancelled = false
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        const idleId = (window as any).requestIdleCallback(() => {
+          if (!isCancelled) setShouldMount3D(true)
+        }, { timeout: 2000 })
+        return () => {
+          isCancelled = true
+          ;(window as any).cancelIdleCallback(idleId)
+        }
+      } else {
+        const timer = setTimeout(() => {
+          if (!isCancelled) setShouldMount3D(true)
+        }, 1200)
+        return () => {
+          isCancelled = true
+          clearTimeout(timer)
+        }
+      }
     }
+  }, [])
+
+  const handleLoadScenario = (scenarioKey: 'wedding' | 'birthday' | 'community') => {
+    setActiveEventId(DEMO_IDS[scenarioKey])
+    onExploreDemo()
   }
 
   const features = [
@@ -152,16 +180,41 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           <div className="lg:col-span-5 relative">
             <div className="relative mx-auto w-full max-w-md lg:max-w-none aspect-[4/3] sm:aspect-square rounded-3xl p-1 bg-gradient-to-b from-violet-500/30 via-cyan-500/20 to-transparent shadow-2xl shadow-violet-900/40">
               <div className="w-full h-full rounded-[23px] overflow-hidden bg-[#0a0c20]/90 border border-white/10 relative">
-                <Suspense fallback={
-                  <div className="w-full h-full min-h-[380px] flex items-center justify-center bg-[#0a0c20]/90">
-                    <div className="flex flex-col items-center gap-2">
-                      <Sparkles className="w-8 h-8 text-violet-400 animate-pulse" />
-                      <span className="text-xs text-slate-400">Loading 3D Celebration...</span>
+                {shouldMount3D ? (
+                  <Suspense fallback={
+                    <div className="w-full h-full flex items-center justify-center bg-[#0a0c20]/90">
+                      <div className="flex flex-col items-center gap-2">
+                        <Sparkles className="w-8 h-8 text-violet-400 animate-pulse" />
+                        <span className="text-xs text-slate-400">Loading 3D Celebration...</span>
+                      </div>
+                    </div>
+                  }>
+                    <ThreeCelebrationScene className="w-full h-full" interactive={true} />
+                  </Suspense>
+                ) : (
+                  <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0c0e2a] via-[#101235] to-[#08091b]">
+                    {/* Atmospheric Glow */}
+                    <div className="absolute w-56 h-56 rounded-full bg-violet-600/20 blur-3xl pointer-events-none" />
+                    <div className="absolute w-40 h-40 rounded-full bg-cyan-500/15 blur-2xl top-10 right-10 pointer-events-none" />
+
+                    {/* Floating Festive Balloon Shapes (Hardware Accelerated CSS) */}
+                    <div className="relative z-0 flex items-center justify-center gap-5 scale-90 sm:scale-100">
+                      <div className="w-14 h-18 sm:w-16 sm:h-20 rounded-[50%_50%_50%_50%/40%_40%_60%_60%] bg-gradient-to-tr from-violet-600 to-indigo-400 shadow-lg shadow-violet-500/40 animate-float" />
+                      <div className="w-16 h-22 sm:w-20 sm:h-26 rounded-[50%_50%_50%_50%/40%_40%_60%_60%] bg-gradient-to-tr from-pink-500 to-rose-400 shadow-lg shadow-pink-500/40 animate-float -mt-6" style={{ animationDelay: '0.7s' }} />
+                      <div className="w-14 h-18 sm:w-16 sm:h-20 rounded-[50%_50%_50%_50%/40%_40%_60%_60%] bg-gradient-to-tr from-cyan-500 to-blue-400 shadow-lg shadow-cyan-500/40 animate-float" style={{ animationDelay: '1.4s' }} />
+                    </div>
+
+                    {/* Shimmering Decorative Rings */}
+                    <div className="absolute inset-8 rounded-full border border-violet-500/20 animate-pulse pointer-events-none" />
+                    <div className="absolute inset-16 rounded-full border border-cyan-400/20 pointer-events-none" />
+
+                    {/* Status Pill */}
+                    <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/70 border border-white/10 text-[11px] text-violet-300 backdrop-blur-md">
+                      <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                      <span>3D Visualizer Ready</span>
                     </div>
                   </div>
-                }>
-                  <ThreeCelebrationScene className="w-full h-full min-h-[380px]" interactive={true} />
-                </Suspense>
+                )}
                 
                 {/* Floating Metric Card Overlay */}
                 <div className="absolute top-4 left-4 z-10 glass-panel px-3.5 py-2 rounded-2xl border border-white/10 shadow-lg flex items-center gap-3">

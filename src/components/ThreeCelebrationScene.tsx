@@ -57,9 +57,9 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
 
     let renderer: THREE.WebGLRenderer
     try {
-      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'high-performance' })
+      renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: 'default' })
       renderer.setSize(container.clientWidth, container.clientHeight)
-      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2))
+      renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.75))
       renderer.toneMapping = THREE.ACESFilmicToneMapping
       renderer.toneMappingExposure = 1.2
       container.appendChild(renderer.domElement)
@@ -88,11 +88,11 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
     const celebrationGroup = new THREE.Group()
     scene.add(celebrationGroup)
 
-    // 1. Stylized Floating Metallic Balloons
+    // 1. Stylized Floating Metallic Balloons (Optimized geometry)
     const balloonColors = [0x8b5cf6, 0xec4899, 0x06b6d4, 0xf59e0b, 0x10b981, 0xd946ef]
     const balloons: Array<{ mesh: THREE.Mesh; initialY: number; speed: number; rotSpeed: number; floatOffset: number }> = []
 
-    const balloonGeometry = new THREE.SphereGeometry(0.85, 32, 32)
+    const balloonGeometry = new THREE.SphereGeometry(0.85, 20, 20)
     // Scale sphere vertically slightly to make it an elegant balloon shape
     balloonGeometry.scale(1, 1.25, 1)
 
@@ -126,8 +126,8 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
       })
     }
 
-    // 2. Holographic Floating Torus Rings & Diamonds (Geometric Celebration Accents)
-    const ringGeo = new THREE.TorusGeometry(1.4, 0.04, 16, 64)
+    // 2. Holographic Floating Torus Rings & Diamonds (Optimized segments)
+    const ringGeo = new THREE.TorusGeometry(1.4, 0.04, 12, 36)
     const ringMat = new THREE.MeshStandardMaterial({
       color: 0x8b5cf6,
       emissive: 0x6366f1,
@@ -140,7 +140,8 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
     ring1.position.set(0, 0, -1)
     celebrationGroup.add(ring1)
 
-    const ring2 = new THREE.Mesh(new THREE.TorusGeometry(2.1, 0.03, 16, 64), new THREE.MeshStandardMaterial({
+    const ring2Geo = new THREE.TorusGeometry(2.1, 0.03, 12, 36)
+    const ring2 = new THREE.Mesh(ring2Geo, new THREE.MeshStandardMaterial({
       color: 0x06b6d4,
       emissive: 0x0891b2,
       emissiveIntensity: 0.6,
@@ -172,8 +173,8 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
     gem2.position.set(3.2, 1.8, 0.5)
     celebrationGroup.add(gem2)
 
-    // 3. Shimmering Gold & Violet Confetti & Particle Sparks
-    const particleCount = 260
+    // 3. Shimmering Gold & Violet Confetti & Particle Sparks (Optimized 140 count)
+    const particleCount = 140
     const particleGeometry = new THREE.BufferGeometry()
     const particlePositions = new Float32Array(particleCount * 3)
     const particleColors = new Float32Array(particleCount * 3)
@@ -241,12 +242,27 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
 
     window.addEventListener('resize', handleResize)
 
+    // Intersection Observer to pause rendering when offscreen
+    let isIntersecting = true
+    let observer: IntersectionObserver | null = null
+    if (typeof IntersectionObserver !== 'undefined') {
+      observer = new IntersectionObserver(([entry]) => {
+        isIntersecting = entry.isIntersecting
+      }, { threshold: 0.05 })
+      observer.observe(container)
+    }
+
     // Animation Loop
     let animationFrameId: number
     let clock = new THREE.Clock()
 
     const animate = () => {
       animationFrameId = requestAnimationFrame(animate)
+
+      // Skip render when tab hidden or canvas scrolled offscreen
+      if (!isIntersecting || (typeof document !== 'undefined' && document.hidden)) {
+        return
+      }
 
       if (isPaused) {
         renderer.render(scene, camera)
@@ -293,12 +309,19 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
     animate()
 
     return () => {
+      observer?.disconnect()
       window.removeEventListener('mousemove', handleMouseMove)
       window.removeEventListener('resize', handleResize)
       cancelAnimationFrame(animationFrameId)
       if (container && renderer.domElement) {
         container.removeChild(renderer.domElement)
       }
+      balloonGeometry.dispose()
+      ringGeo.dispose()
+      ring2Geo.dispose()
+      octaGeo.dispose()
+      particleGeometry.dispose()
+      particleMaterial.dispose()
       renderer.dispose()
     }
   }, [isReducedMotion, isPaused, interactive, webglSupported])

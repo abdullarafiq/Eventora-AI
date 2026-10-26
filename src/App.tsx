@@ -1,11 +1,11 @@
 import { useState, useEffect, lazy, Suspense } from 'react'
 import { Navbar } from './components/Navbar'
 import { ErrorBoundary } from './components/ErrorBoundary'
-import { EventCreationWizard } from './components/EventCreationWizard'
 import { initializeStorage } from './utils/storage'
 import type { EventDetails } from './types'
 
-// Lazy-load pages for optimal bundle splitting
+// Lazy-load pages and heavy modals for optimal bundle splitting
+const EventCreationWizard = lazy(() => import('./components/EventCreationWizard').then(m => ({ default: m.EventCreationWizard })))
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const AiPlannerPage = lazy(() => import('./pages/AiPlannerPage').then(m => ({ default: m.AiPlannerPage })))
@@ -91,12 +91,16 @@ export function App() {
           </Suspense>
         </main>
 
-        {/* Event Creation Wizard Modal */}
-        <EventCreationWizard
-          isOpen={isWizardOpen}
-          onClose={() => setIsWizardOpen(false)}
-          onEventCreated={handleEventCreated}
-        />
+        {/* Event Creation Wizard Modal (Deferred) */}
+        {isWizardOpen && (
+          <Suspense fallback={null}>
+            <EventCreationWizard
+              isOpen={isWizardOpen}
+              onClose={() => setIsWizardOpen(false)}
+              onEventCreated={handleEventCreated}
+            />
+          </Suspense>
+        )}
 
       </div>
     </ErrorBoundary>
