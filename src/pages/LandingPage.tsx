@@ -1,6 +1,6 @@
-import React, { useState, useEffect, lazy, Suspense } from 'react'
+import React, { useState, useEffect, useRef, lazy, Suspense } from 'react'
 import { Sparkles, ArrowRight, ShieldCheck, PieChart, CalendarCheck, Users, Wand2, Compass, Layers, CheckCircle2, ChevronRight, Zap } from 'lucide-react'
-import { setActiveEventId } from '../utils/storage'
+import { setActiveEventId, initializeStorage } from '../utils/storage'
 
 const ThreeCelebrationScene = lazy(() => import('../components/ThreeCelebrationScene').then(m => ({ default: m.ThreeCelebrationScene })))
 
@@ -21,34 +21,44 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   onExploreDemo,
   onNavigateTab
 }) => {
+  const visualContainerRef = useRef<HTMLDivElement>(null)
   const [shouldMount3D, setShouldMount3D] = useState(false)
 
-  // Defer heavy Three.js initialization until main-thread is idle to optimize FCP, LCP & TBT
+  // Use IntersectionObserver: on mobile, the 3D card is below the fold, so Three.js
+  // is NOT loaded until the user scrolls down to it or taps the card.
   useEffect(() => {
-    let isCancelled = false
-    if (typeof window !== 'undefined') {
-      if ('requestIdleCallback' in window) {
-        const idleId = (window as any).requestIdleCallback(() => {
-          if (!isCancelled) setShouldMount3D(true)
-        }, { timeout: 2000 })
-        return () => {
-          isCancelled = true
-          ;(window as any).cancelIdleCallback(idleId)
-        }
-      } else {
-        const timer = setTimeout(() => {
-          if (!isCancelled) setShouldMount3D(true)
-        }, 1200)
-        return () => {
-          isCancelled = true
-          clearTimeout(timer)
-        }
-      }
+    const el = visualContainerRef.current
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      return
     }
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        const [entry] = entries
+        if (entry.isIntersecting) {
+          if ('requestIdleCallback' in window) {
+            ;(window as any).requestIdleCallback(() => setShouldMount3D(true), { timeout: 3500 })
+          } else {
+            setTimeout(() => setShouldMount3D(true), 600)
+          }
+          observer.disconnect()
+        }
+      },
+      { rootMargin: '40px' }
+    )
+
+    observer.observe(el)
+    return () => observer.disconnect()
   }, [])
 
-  const handleLoadScenario = (scenarioKey: 'wedding' | 'birthday' | 'community') => {
+  const handleLoadScenario = async (scenarioKey: 'wedding' | 'birthday' | 'community') => {
+    await initializeStorage()
     setActiveEventId(DEMO_IDS[scenarioKey])
+    onExploreDemo()
+  }
+
+  const handleExploreDemoClick = async () => {
+    await initializeStorage()
     onExploreDemo()
   }
 
@@ -151,7 +161,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
               </button>
 
               <button
-                onClick={onExploreDemo}
+                onClick={handleExploreDemoClick}
                 className="w-full sm:w-auto px-8 py-4 rounded-2xl text-base font-semibold text-slate-200 bg-slate-900/80 hover:bg-slate-800/90 border border-violet-500/30 hover:border-violet-500/60 shadow-lg flex items-center justify-center gap-2.5 transition-all cursor-pointer backdrop-blur-md"
               >
                 <Zap className="w-5 h-5 text-cyan-400" />
@@ -177,7 +187,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           {/* Right Column: 3D Interactive Celebration Visualizer */}
-          <div className="lg:col-span-5 relative">
+          <div ref={visualContainerRef} className="lg:col-span-5 relative">
             <div className="relative mx-auto w-full max-w-md lg:max-w-none aspect-[4/3] sm:aspect-square rounded-3xl p-1 bg-gradient-to-b from-violet-500/30 via-cyan-500/20 to-transparent shadow-2xl shadow-violet-900/40">
               <div className="w-full h-full rounded-[23px] overflow-hidden bg-[#0a0c20]/90 border border-white/10 relative">
                 {shouldMount3D ? (
@@ -192,7 +202,11 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <ThreeCelebrationScene className="w-full h-full" interactive={true} />
                   </Suspense>
                 ) : (
-                  <div className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0c0e2a] via-[#101235] to-[#08091b]">
+                  <div 
+                    onClick={() => setShouldMount3D(true)}
+                    className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0c0e2a] via-[#101235] to-[#08091b] cursor-pointer group"
+                    title="Click to launch interactive 3D scene"
+                  >
                     {/* Atmospheric Glow */}
                     <div className="absolute w-56 h-56 rounded-full bg-violet-600/20 blur-3xl pointer-events-none" />
                     <div className="absolute w-40 h-40 rounded-full bg-cyan-500/15 blur-2xl top-10 right-10 pointer-events-none" />
@@ -209,9 +223,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                     <div className="absolute inset-16 rounded-full border border-cyan-400/20 pointer-events-none" />
 
                     {/* Status Pill */}
-                    <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/70 border border-white/10 text-[11px] text-violet-300 backdrop-blur-md">
+                    <div className="absolute bottom-4 right-4 z-20 flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-950/70 border border-white/10 text-[11px] text-violet-300 backdrop-blur-md group-hover:border-violet-500/50 transition-colors">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                      <span>3D Visualizer Ready</span>
+                      <span>3D Ready • Tap to Launch</span>
                     </div>
                   </div>
                 )}

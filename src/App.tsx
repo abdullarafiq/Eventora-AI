@@ -2,11 +2,11 @@ import { useState, useEffect, lazy, Suspense } from 'react'
 import { Navbar } from './components/Navbar'
 import { ErrorBoundary } from './components/ErrorBoundary'
 import { initializeStorage } from './utils/storage'
+import { LandingPage } from './pages/LandingPage'
 import type { EventDetails } from './types'
 
-// Lazy-load pages and heavy modals for optimal bundle splitting
+// Lazy-load sub-routes and heavy modals for optimal bundle splitting
 const EventCreationWizard = lazy(() => import('./components/EventCreationWizard').then(m => ({ default: m.EventCreationWizard })))
-const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })))
 const DashboardPage = lazy(() => import('./pages/DashboardPage').then(m => ({ default: m.DashboardPage })))
 const AiPlannerPage = lazy(() => import('./pages/AiPlannerPage').then(m => ({ default: m.AiPlannerPage })))
 const BudgetDashboardPage = lazy(() => import('./pages/BudgetDashboardPage').then(m => ({ default: m.BudgetDashboardPage })))
@@ -29,8 +29,17 @@ export function App() {
   const [currentTab, setCurrentTab] = useState<string>('landing')
   const [isWizardOpen, setIsWizardOpen] = useState<boolean>(false)
 
+  // Defer storage initialization so it runs when browser main-thread is completely idle
   useEffect(() => {
-    initializeStorage()
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        ;(window as any).requestIdleCallback(() => {
+          initializeStorage()
+        })
+      } else {
+        setTimeout(() => initializeStorage(), 1500)
+      }
+    }
   }, [])
 
   const handleEventCreated = (_newEvent: EventDetails) => {
@@ -48,47 +57,49 @@ export function App() {
           onOpenCreateWizard={() => setIsWizardOpen(true)}
         />
 
-        {/* Main View Body with Suspense code-splitting */}
+        {/* Main View Body */}
         <main className="flex-1">
-          <Suspense fallback={<PageSkeleton />}>
-            {currentTab === 'landing' && (
-              <LandingPage
-                onPlanEvent={() => setIsWizardOpen(true)}
-                onExploreDemo={() => setCurrentTab('dashboard')}
-                onNavigateTab={(tab) => setCurrentTab(tab)}
-              />
-            )}
+          {currentTab === 'landing' ? (
+            <LandingPage
+              onPlanEvent={() => setIsWizardOpen(true)}
+              onExploreDemo={() => setCurrentTab('dashboard')}
+              onNavigateTab={(tab) => setCurrentTab(tab)}
+            />
+          ) : (
+            <Suspense fallback={<PageSkeleton />}>
+              <>
+                {currentTab === 'dashboard' && (
+                  <DashboardPage
+                    onNavigateTab={(tab) => setCurrentTab(tab)}
+                    onOpenCreateWizard={() => setIsWizardOpen(true)}
+                  />
+                )}
 
-            {currentTab === 'dashboard' && (
-              <DashboardPage
-                onNavigateTab={(tab) => setCurrentTab(tab)}
-                onOpenCreateWizard={() => setIsWizardOpen(true)}
-              />
-            )}
+                {currentTab === 'ai-planner' && (
+                  <AiPlannerPage
+                    onNavigateTab={(tab) => setCurrentTab(tab)}
+                    onOpenCreateWizard={() => setIsWizardOpen(true)}
+                  />
+                )}
 
-            {currentTab === 'ai-planner' && (
-              <AiPlannerPage
-                onNavigateTab={(tab) => setCurrentTab(tab)}
-                onOpenCreateWizard={() => setIsWizardOpen(true)}
-              />
-            )}
+                {currentTab === 'budget' && (
+                  <BudgetDashboardPage />
+                )}
 
-            {currentTab === 'budget' && (
-              <BudgetDashboardPage />
-            )}
+                {currentTab === 'timeline' && (
+                  <TimelinePlannerPage />
+                )}
 
-            {currentTab === 'timeline' && (
-              <TimelinePlannerPage />
-            )}
+                {currentTab === 'vendors' && (
+                  <VendorManagementPage />
+                )}
 
-            {currentTab === 'vendors' && (
-              <VendorManagementPage />
-            )}
-
-            {currentTab === 'ideas' && (
-              <IdeasGeneratorPage />
-            )}
-          </Suspense>
+                {currentTab === 'ideas' && (
+                  <IdeasGeneratorPage />
+                )}
+              </>
+            </Suspense>
+          )}
         </main>
 
         {/* Event Creation Wizard Modal (Deferred) */}

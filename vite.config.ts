@@ -31,6 +31,9 @@ export default defineConfig({
           if (id.includes('node_modules/lucide-react')) {
             return 'lucide'
           }
+          if (id.includes('demoData')) {
+            return 'demo-data'
+          }
         },
       },
     },

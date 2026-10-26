@@ -1,5 +1,4 @@
 import type { EventDetails, ExpenseItem, TimelineTask, VendorItem, AIGeneratedPlan, EventIdea } from '../types'
-import { DEMO_SCENARIOS, INITIAL_IDEAS } from './demoData'
 
 const STORAGE_KEYS = {
   ACTIVE_EVENT_ID: 'eventora_active_event_id',
@@ -13,12 +12,13 @@ const STORAGE_KEYS = {
 }
 
 /**
- * Initializes local storage with rich default scenarios if empty
+ * Initializes local storage on-demand with default scenarios if empty (dynamic import to avoid blocking critical bundle)
  */
-export function initializeStorage(): void {
+export async function initializeStorage(): Promise<void> {
   if (typeof window === 'undefined') return
 
   if (!localStorage.getItem(STORAGE_KEYS.EVENTS)) {
+    const { DEMO_SCENARIOS, INITIAL_IDEAS } = await import('./demoData')
     const defaultScenarios = Object.values(DEMO_SCENARIOS)
     
     const events: EventDetails[] = defaultScenarios.map(s => s.event)
@@ -37,6 +37,7 @@ export function initializeStorage(): void {
     localStorage.setItem(STORAGE_KEYS.PLANS, JSON.stringify(plans))
     localStorage.setItem(STORAGE_KEYS.SAVED_IDEAS, JSON.stringify(INITIAL_IDEAS))
     localStorage.setItem(STORAGE_KEYS.ACTIVE_EVENT_ID, 'demo-wedding')
+    window.dispatchEvent(new CustomEvent('eventora_data_updated', { detail: 'initialized' }))
   }
 }
 
@@ -218,9 +219,9 @@ export function saveEventPlan(eventId: string, plan: AIGeneratedPlan): void {
 export function getSavedIdeas(): EventIdea[] {
   try {
     const raw = localStorage.getItem(STORAGE_KEYS.SAVED_IDEAS)
-    return raw ? JSON.parse(raw) : INITIAL_IDEAS
+    return raw ? JSON.parse(raw) : []
   } catch {
-    return INITIAL_IDEAS
+    return []
   }
 }
 
@@ -260,7 +261,7 @@ export function setReducedMotion(reduced: boolean): void {
 }
 
 // Reset data to demo state
-export function resetToDemoState(): void {
+export async function resetToDemoState(): Promise<void> {
   localStorage.removeItem(STORAGE_KEYS.EVENTS)
   localStorage.removeItem(STORAGE_KEYS.EXPENSES)
   localStorage.removeItem(STORAGE_KEYS.TASKS)
@@ -268,7 +269,7 @@ export function resetToDemoState(): void {
   localStorage.removeItem(STORAGE_KEYS.PLANS)
   localStorage.removeItem(STORAGE_KEYS.SAVED_IDEAS)
   localStorage.removeItem(STORAGE_KEYS.ACTIVE_EVENT_ID)
-  initializeStorage()
+  await initializeStorage()
   window.dispatchEvent(new CustomEvent('eventora_data_reset'))
 }
 

@@ -11,8 +11,8 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpenCreateWizard }) => {
-  const [events, setEvents] = useState<EventDetails[]>(getEvents())
-  const [activeEvent, setActiveEvent] = useState<EventDetails | null>(getActiveEvent())
+  const [events, setEvents] = useState<EventDetails[]>(() => getEvents())
+  const [activeEvent, setActiveEvent] = useState<EventDetails | null>(() => getActiveEvent())
   const [isEventMenuOpen, setIsEventMenuOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
@@ -38,9 +38,9 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
     setIsEventMenuOpen(false)
   }
 
-  const handleReset = () => {
+  const handleReset = async () => {
     if (window.confirm('Reset all demo scenarios to initial hackathon defaults? (Custom changes will be reloaded)')) {
-      resetToDemoState()
+      await resetToDemoState()
       reloadEvents()
     }
   }

@@ -251,8 +251,8 @@ describe('Zod Schema Validation & Security Boundaries', () => {
 })
 
 describe('State Persistence & Cascading Deletions', () => {
-  beforeEach(() => {
-    resetToDemoState()
+  beforeEach(async () => {
+    await resetToDemoState()
   })
 
   it('saves, retrieves, and cascades deletion of an event and its dependencies', () => {
