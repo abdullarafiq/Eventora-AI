@@ -16,6 +16,62 @@ interface LandingPageProps {
   onNavigateTab: (tab: string) => void
 }
 
+const FEATURES = [
+  {
+    id: 'ai-planning',
+    title: 'GenAI Planning Assistant',
+    description: 'Generates cohesive themes, lighting concepts, dietary menus, venue criteria, and cost-saving alternatives in seconds.',
+    icon: Wand2,
+    color: 'from-violet-500 to-indigo-600',
+    actionTab: 'ai-planner'
+  },
+  {
+    id: 'smart-budget',
+    title: 'Smart INR Budget Manager',
+    description: 'Visual category allocations, live estimated vs actual tracking, and AI-driven warnings when approaching limits.',
+    icon: PieChart,
+    color: 'from-cyan-500 to-blue-600',
+    actionTab: 'budget'
+  },
+  {
+    id: 'timeline-automation',
+    title: 'Timeline Automation',
+    description: 'Dynamic 90-60-30-14-7 day milestones intelligently adapted to your target event date with overdue alerts.',
+    icon: CalendarCheck,
+    color: 'from-pink-500 to-rose-600',
+    actionTab: 'timeline'
+  },
+  {
+    id: 'vendor-hub',
+    title: 'Vendor Management Hub',
+    description: 'Streamlined tracking across 8 key event categories from initial outreach and shortlisting to confirmed booking.',
+    icon: Users,
+    color: 'from-amber-500 to-orange-600',
+    actionTab: 'vendors'
+  }
+] as const
+
+const STEPS = [
+  {
+    step: '01',
+    title: 'Tell AI Your Vision',
+    description: 'Specify your event type, guest count, city, and total budget in INR. Add any theme or dietary preferences.',
+    icon: Compass
+  },
+  {
+    step: '02',
+    title: 'AI Generates Full Blueprint',
+    description: 'Our GenAI engine creates structured budget buckets, vendor checklists, decor suggestions, and daily timelines.',
+    icon: Sparkles
+  },
+  {
+    step: '03',
+    title: 'Manage & Celebrate',
+    description: 'Track real-time expenses, check off milestones, and collaborate seamlessly with your vendors until event day.',
+    icon: Layers
+  }
+] as const
+
 export const LandingPage: React.FC<LandingPageProps> = ({
   onPlanEvent,
   onExploreDemo,
@@ -24,9 +80,19 @@ export const LandingPage: React.FC<LandingPageProps> = ({
   const visualContainerRef = useRef<HTMLDivElement>(null)
   const [shouldMount3D, setShouldMount3D] = useState(false)
 
-  // Use IntersectionObserver: on mobile, the 3D card is below the fold, so Three.js
-  // is NOT loaded until the user scrolls down to it or taps the card.
+  // Auto-mount 3D scene only on desktop devices with high-performance GPUs and mouse pointer.
+  // On mobile touch devices, the lightweight CSS celebration card renders with zero TBT,
+  // and the user can tap "3D Ready • Tap to Launch" to load the full WebGL scene on demand.
   useEffect(() => {
+    const isDesktop = typeof window !== 'undefined' &&
+      window.innerWidth >= 1024 &&
+      window.matchMedia &&
+      window.matchMedia('(hover: hover) and (pointer: fine)').matches
+
+    if (!isDesktop) {
+      return
+    }
+
     const el = visualContainerRef.current
     if (!el || typeof IntersectionObserver === 'undefined') {
       return
@@ -37,9 +103,9 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         const [entry] = entries
         if (entry.isIntersecting) {
           if ('requestIdleCallback' in window) {
-            ;(window as any).requestIdleCallback(() => setShouldMount3D(true), { timeout: 3500 })
+            ;(window as any).requestIdleCallback(() => setShouldMount3D(true))
           } else {
-            setTimeout(() => setShouldMount3D(true), 600)
+            setTimeout(() => setShouldMount3D(true), 1200)
           }
           observer.disconnect()
         }
@@ -61,62 +127,6 @@ export const LandingPage: React.FC<LandingPageProps> = ({
     await initializeStorage()
     onExploreDemo()
   }
-
-  const features = [
-    {
-      id: 'ai-planning',
-      title: 'GenAI Planning Assistant',
-      description: 'Generates cohesive themes, lighting concepts, dietary menus, venue criteria, and cost-saving alternatives in seconds.',
-      icon: Wand2,
-      color: 'from-violet-500 to-indigo-600',
-      actionTab: 'ai-planner'
-    },
-    {
-      id: 'smart-budget',
-      title: 'Smart INR Budget Manager',
-      description: 'Visual category allocations, live estimated vs actual tracking, and AI-driven warnings when approaching limits.',
-      icon: PieChart,
-      color: 'from-cyan-500 to-blue-600',
-      actionTab: 'budget'
-    },
-    {
-      id: 'timeline-automation',
-      title: 'Timeline Automation',
-      description: 'Dynamic 90-60-30-14-7 day milestones intelligently adapted to your target event date with overdue alerts.',
-      icon: CalendarCheck,
-      color: 'from-pink-500 to-rose-600',
-      actionTab: 'timeline'
-    },
-    {
-      id: 'vendor-hub',
-      title: 'Vendor Management Hub',
-      description: 'Streamlined tracking across 8 key event categories from initial outreach and shortlisting to confirmed booking.',
-      icon: Users,
-      color: 'from-amber-500 to-orange-600',
-      actionTab: 'vendors'
-    }
-  ]
-
-  const steps = [
-    {
-      step: '01',
-      title: 'Tell AI Your Vision',
-      description: 'Specify your event type, guest count, city, and total budget in INR. Add any theme or dietary preferences.',
-      icon: Compass
-    },
-    {
-      step: '02',
-      title: 'AI Generates Full Blueprint',
-      description: 'Our GenAI engine creates structured budget buckets, vendor checklists, decor suggestions, and daily timelines.',
-      icon: Sparkles
-    },
-    {
-      step: '03',
-      title: 'Manage & Celebrate',
-      description: 'Track real-time expenses, check off milestones, and collaborate seamlessly with your vendors until event day.',
-      icon: Layers
-    }
-  ]
 
   return (
     <div className="relative overflow-hidden">
@@ -204,7 +214,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({
                 ) : (
                   <div 
                     onClick={() => setShouldMount3D(true)}
-                    className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0c0e2a] via-[#101235] to-[#08091b] cursor-pointer group"
+                    onMouseEnter={() => setShouldMount3D(true)}
+                    onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setShouldMount3D(true) } }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label="Click to launch interactive 3D celebration canvas"
+                    className="w-full h-full flex flex-col items-center justify-center relative overflow-hidden bg-gradient-to-br from-[#0c0e2a] via-[#101235] to-[#08091b] cursor-pointer group focus:outline-hidden focus:ring-2 focus:ring-violet-500/50"
                     title="Click to launch interactive 3D scene"
                   >
                     {/* Atmospheric Glow */}
@@ -365,7 +380,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {features.map((feat) => {
+          {FEATURES.map((feat) => {
             const Icon = feat.icon
             return (
               <div
@@ -404,7 +419,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {steps.map((st) => {
+            {STEPS.map((st) => {
               const Icon = st.icon
               return (
                 <div key={st.step} className="relative glass-panel p-8 rounded-3xl border border-white/10 flex flex-col items-start">

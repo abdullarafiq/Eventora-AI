@@ -22,10 +22,17 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id: string) {
+          if (id.includes('node_modules/react/') || id.includes('node_modules/react-dom/') || id.includes('node_modules/scheduler/')) {
+            return 'react-vendor'
+          }
           if (id.includes('node_modules/three')) {
             return 'three'
           }
-          if (id.includes('node_modules/recharts')) {
+          if (
+            id.includes('node_modules/recharts') ||
+            id.includes('node_modules/d3-') ||
+            id.includes('node_modules/victory-vendor')
+          ) {
             return 'recharts'
           }
           if (id.includes('node_modules/lucide-react')) {
