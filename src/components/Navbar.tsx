@@ -10,6 +10,23 @@ interface NavbarProps {
   onOpenCreateWizard: () => void
 }
 
+interface NavItem {
+  id: string
+  label: string
+  icon: typeof Sparkles
+  badge?: string
+}
+
+const NAV_ITEMS: readonly NavItem[] = [
+  { id: 'landing', label: 'Home', icon: Sparkles },
+  { id: 'dashboard', label: 'Dashboard', icon: Calendar },
+  { id: 'ai-planner', label: 'AI Planner', icon: Sparkles, badge: 'GenAI' },
+  { id: 'budget', label: 'Smart Budget', icon: DollarSign },
+  { id: 'timeline', label: 'Timeline', icon: Clock },
+  { id: 'vendors', label: 'Vendors', icon: Users },
+  { id: 'ideas', label: 'Ideas Hub', icon: Lightbulb },
+]
+
 export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpenCreateWizard }) => {
   const [events, setEvents] = useState<EventDetails[]>(() => getEvents())
   const [activeEvent, setActiveEvent] = useState<EventDetails | null>(() => getActiveEvent())
@@ -45,16 +62,6 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
     }
   }
 
-  const navItems = [
-    { id: 'landing', label: 'Home', icon: Sparkles },
-    { id: 'dashboard', label: 'Dashboard', icon: Calendar },
-    { id: 'ai-planner', label: 'AI Planner', icon: Sparkles, badge: 'GenAI' },
-    { id: 'budget', label: 'Smart Budget', icon: DollarSign },
-    { id: 'timeline', label: 'Timeline', icon: Clock },
-    { id: 'vendors', label: 'Vendors', icon: Users },
-    { id: 'ideas', label: 'Ideas Hub', icon: Lightbulb },
-  ]
-
   return (
     <header className="sticky top-0 z-50 border-b border-violet-900/30 bg-[#070814]/85 backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -85,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
 
           {/* Desktop Navigation Links */}
           <nav className="hidden lg:flex items-center gap-1">
-            {navItems.map((item) => {
+            {NAV_ITEMS.map((item) => {
               const Icon = item.icon
               const isActive = currentTab === item.id
               return (
@@ -201,7 +208,7 @@ export const Navbar: React.FC<NavbarProps> = ({ currentTab, setCurrentTab, onOpe
       {isMobileMenuOpen && (
         <div className="lg:hidden px-4 pt-2 pb-6 border-t border-violet-900/40 bg-[#070814]/98 backdrop-blur-2xl">
           <div className="grid grid-cols-2 gap-2 mt-2">
-            {navItems.map((item) => {
+            {NAV_ITEMS.map((item) => {
               const Icon = item.icon
               const isActive = currentTab === item.id
               return (

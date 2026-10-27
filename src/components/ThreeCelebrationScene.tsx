@@ -98,13 +98,10 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
 
     for (let i = 0; i < 9; i++) {
       const color = balloonColors[i % balloonColors.length]
-      const balloonMaterial = new THREE.MeshPhysicalMaterial({
+      const balloonMaterial = new THREE.MeshStandardMaterial({
         color,
-        roughness: 0.15,
-        metalness: 0.25,
-        clearcoat: 0.9,
-        clearcoatRoughness: 0.1,
-        reflectivity: 0.9,
+        roughness: 0.2,
+        metalness: 0.35,
       })
 
       const balloon = new THREE.Mesh(balloonGeometry, balloonMaterial)
@@ -153,23 +150,25 @@ export const ThreeCelebrationScene: React.FC<ThreeCelebrationSceneProps> = ({
 
     // Stylized floating crystal gems / diamonds
     const octaGeo = new THREE.OctahedronGeometry(0.55, 0)
-    const octaMat = new THREE.MeshPhysicalMaterial({
+    const gem1Mat = new THREE.MeshStandardMaterial({
       color: 0xf59e0b,
-      metalness: 0.1,
-      roughness: 0.05,
-      transmission: 0.6,
-      thickness: 0.5,
-      reflectivity: 0.8
+      metalness: 0.3,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.85
     })
-    const gem1 = new THREE.Mesh(octaGeo, octaMat)
+    const gem1 = new THREE.Mesh(octaGeo, gem1Mat)
     gem1.position.set(-2.8, 2.2, 1)
     celebrationGroup.add(gem1)
 
-    const gem2 = new THREE.Mesh(octaGeo, new THREE.MeshPhysicalMaterial({
+    const gem2Mat = new THREE.MeshStandardMaterial({
       color: 0xec4899,
-      transmission: 0.6,
-      roughness: 0.05
-    }))
+      metalness: 0.3,
+      roughness: 0.1,
+      transparent: true,
+      opacity: 0.85
+    })
+    const gem2 = new THREE.Mesh(octaGeo, gem2Mat)
     gem2.position.set(3.2, 1.8, 0.5)
     celebrationGroup.add(gem2)
 
